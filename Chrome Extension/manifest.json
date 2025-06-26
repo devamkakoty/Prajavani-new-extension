@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Prajavani Comic Translator",
+  "version": "0.1.0",
+  "description": "Translates Prajavani comic images using Gemini and displays the translation.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "declarativeNetRequest"
+  ],
+  "host_permissions": [
+    "https://generativelanguage.googleapis.com/*"
+  ],
+  "declarative_net_request": {
+    "rule_resources": [{
+      "id": "ruleset_1",
+      "enabled": true,
+      "path": "rules.json"
+    }]
+  },
+  "action": {
+    
+    "default_title": "Translate Prajavani Comic"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}

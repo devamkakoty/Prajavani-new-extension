@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kannada OCR with Tesseract.js</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .upload-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .upload-btn {
+            padding: 10px 20px;
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .upload-btn:hover {
+            background-color: #3367d6;
+        }
+        
+        .preview {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        
+        .preview img {
+            max-width: 100%;
+            max-height: 400px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .result {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            min-height: 100px;
+            background-color: #f9f9f9;
+            white-space: pre-wrap;
+        }
+        
+        .progress {
+            width: 100%;
+            height: 20px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background-color: #4285f4;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        .status {
+            margin-top: 10px;
+            text-align: center;
+            font-style: italic;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>Kannada Text Recognition</h1>
+    
+    <div class="container">
+        <div class="upload-section">
+            <input type="file" id="imageInput" class="file-input" accept="image/*">
+            <button class="upload-btn" id="uploadBtn">Upload Image</button>
+            <div class="status" id="status">Upload an image with Kannada text</div>
+        </div>
+        
+        <div class="progress">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        
+        <div class="preview" id="imagePreview"></div>
+        
+        <h3>Recognized Text:</h3>
+        <div class="result" id="result">Text will appear here after processing...</div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const imageInput = document.getElementById('imageInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const imagePreview = document.getElementById('imagePreview');
+            const resultDiv = document.getElementById('result');
+            const statusDiv = document.getElementById('status');
+            const progressBar = document.getElementById('progressBar');
+            
+            // Initialize Tesseract worker once
+            const worker = Tesseract.createWorker();
+            
+            // Initialize worker with Kannada language
+            async function initWorker() {
+                await worker.load();
+                await worker.loadLanguage('kan');
+                await worker.initialize('kan');
+                statusDiv.textContent = 'Ready to recognize Kannada text';
+            }
+            
+            // Initialize the worker when page loads
+            initWorker();
+            
+            uploadBtn.addEventListener('click', function() {
+                imageInput.click();
+            });
+            
+            imageInput.addEventListener('change', async function(e) {
+                if (!e.target.files.length) return;
+                
+                const file = e.target.files[0];
+                const imageUrl = URL.createObjectURL(file);
+                
+                // Display image preview
+                imagePreview.innerHTML = `<img src="${imageUrl}" alt="Uploaded Image">`;
+                resultDiv.textContent = 'Processing...';
+                
+                try {
+                    // Recognize text from the image
+                    const result = await worker.recognize(file, {
+                        logger: progress => {
+                            if (progress.status === 'recognizing text') {
+                                const percentage = Math.floor(progress.progress * 100);
+                                progressBar.style.width = `${percentage}%`;
+                                statusDiv.textContent = `Recognizing text: ${percentage}%`;
+                            }
+                        }
+                    });
+                    
+                    if (result.data.text.trim()) {
+                        resultDiv.textContent = result.data.text;
+                        statusDiv.textContent = 'Text recognition complete';
+                    } else {
+                        resultDiv.textContent = 'No text was detected in the image. Try another image with clearer Kannada text.';
+                        statusDiv.textContent = 'No text detected';
+                    }
+                    
+                } catch (error) {
+                    console.error('Error:', error);
+                    resultDiv.textContent = `Error: ${error.message}`;
+                    statusDiv.textContent = 'An error occurred';
+                }
+                
+                progressBar.style.width = '100%';
+                setTimeout(() => {
+                    progressBar.style.width = '0%';
+                }, 2000);
+            });
+        });
+    </script>
+</body>
+</html>
